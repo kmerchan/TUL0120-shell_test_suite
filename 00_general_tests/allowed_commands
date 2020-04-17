@@ -1,0 +1,30 @@
+#!/bin/bash
+#
+# test for banned commands in ltrace
+
+tmpfile="checker_tmp_file_$RANDOM"
+# clean up before start
+stop_shell
+rm -f $tmp_file
+
+# save the ltrace to a psuedo-random logfile
+echo "/bin/ls" | ltrace -e -f -o "$tmpfile" $SHELL > "your_output" 2> /dev/null
+
+rm -f "your_output"
+
+# check file contents for log data
+grep -v -e 'access\|chdir\|close\|closedir\|execve\|exit\|_exit\|fflush\|fork\|free\|getcwd\|getline\|isatty\|kill\|malloc\|open\|opendir\|perror\|read\|readdir\|signal\|stat\|lstat\|fstat\|strtok\|wait\|waitpid\|wait3\|wait4\|write' "$tmp_file" > "2-$tmp_file" 2> /dev/null &
+
+# wait due to convention
+$SLEEP $SLEEPSECONDS
+
+# check result
+nmatch=`grep -v -e 'libc\|fileno\|pending\|str*chr' "2-$tmp_file" | wc -l`
+#echo "nmatch = $nmatch"
+if [ $nmatch -eq 0 ]
+then
+    print_ok
+else
+    print_ko
+fi
+rm -f "2-$tmp_file"
